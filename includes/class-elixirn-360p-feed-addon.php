@@ -111,7 +111,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 					array( 'name' => 'api_token', 'label' => 'API Token', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_api_token' ) ),
 					array( 'name' => 'api_version', 'label' => 'API Version', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_api_version' ) ),
 					array( 'name' => 'terminal_id', 'label' => 'terminal ID', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_terminal_id' ) ),
-					array( 'name' => 'partner_id', 'label' => 'partner ID', 'type' => 'text' ),
+					array( 'name' => 'partner_id', 'label' => 'partner ID', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_partner_id' ) ),
 					array( 'name' => 'hide_signature', 'label' => 'hide signature', 'type' => 'checkbox', 'choices' => array( array( 'name' => 'hide_signature', 'label' => 'Hide signature' ) ) ),
 					array( 'name' => 'append_shortcode', 'label' => 'enable automatic shortcode append', 'type' => 'checkbox', 'choices' => array( array( 'name' => 'append_shortcode', 'label' => 'Enable' ) ) ),
 					array( 'name' => 'button_label', 'label' => 'button label', 'type' => 'text' ),

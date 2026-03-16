@@ -27,16 +27,28 @@ class ElixirN_360p_Admin {
 
 	public function meta_box( $meta_boxes, $entry, $form ) {
 		$meta_boxes['elixirN_360payment'] = array(
-			'title'    => __( '360Payment Status', 'elixirn-gf-360payment' ),
-			'callback' => function() use ( $entry ) {
-				echo '<ul>';
-				foreach ( ElixirN_360p_Utils::META_KEYS as $k => $key ) {
-					printf( '<li><strong>%s:</strong> %s</li>', esc_html( $k ), esc_html( (string) gform_get_meta( $entry['id'], $key ) ) );
-				}
-				echo '</ul>';
-			},
+			'title'         => __( '360Payment Status', 'elixirn-gf-360payment' ),
+			'callback'      => array( $this, 'render_meta_box' ),
+			'context'       => 'side',
+			'callback_args' => array(
+				'entry' => $entry,
+				'form'  => $form,
+			),
 		);
 		return $meta_boxes;
+	}
+
+	public function render_meta_box( $args ) {
+		$entry = rgar( $args, 'entry' );
+		if ( empty( $entry['id'] ) ) {
+			return;
+		}
+
+		echo '<ul>';
+		foreach ( ElixirN_360p_Utils::META_KEYS as $k => $key ) {
+			printf( '<li><strong>%s:</strong> %s</li>', esc_html( $k ), esc_html( (string) gform_get_meta( $entry['id'], $key ) ) );
+		}
+		echo '</ul>';
 	}
 
 	public function add_entries_column( $columns ) {
