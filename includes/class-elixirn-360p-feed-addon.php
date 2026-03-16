@@ -83,14 +83,9 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 
 					var mode = modeField.val();
 					var fixedRow = getSettingRow('fixed_amount');
-					var mappedRow = getSettingRow('mapped_amount_field');
 
 					if (fixedRow.length) {
 						fixedRow.toggle(mode === 'fixed');
-					}
-
-					if (mappedRow.length) {
-						mappedRow.toggle(mode === 'mapped');
 					}
 				}
 
@@ -152,26 +147,24 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 					array( 'name' => 'isActive', 'label' => 'Feed Active', 'type' => 'toggle' ),
 					array( 'name' => 'amount_mode', 'label' => 'Payment amount mode', 'type' => 'select', 'choices' => array( array( 'label' => 'fixed amount', 'value' => 'fixed' ), array( 'label' => 'mapped field amount', 'value' => 'mapped' ) ) ),
 					array( 'name' => 'fixed_amount', 'label' => 'Fixed amount', 'type' => 'text' ),
-					array( 'name' => 'mapped_amount_field', 'label' => 'Mapped amount field', 'type' => 'field_select' ),
-					array( 'name' => 'mapped_amount_custom', 'label' => 'Mapped amount custom value', 'type' => 'text' ),
-					array( 'name' => 'first_name_field', 'label' => 'first name', 'type' => 'field_select' ),
-					array( 'name' => 'first_name_custom', 'label' => 'first name custom value', 'type' => 'text' ),
-					array( 'name' => 'last_name_field', 'label' => 'last name', 'type' => 'field_select' ),
-					array( 'name' => 'last_name_custom', 'label' => 'last name custom value', 'type' => 'text' ),
-					array( 'name' => 'email_field', 'label' => 'email', 'type' => 'field_select' ),
-					array( 'name' => 'email_custom', 'label' => 'email custom value', 'type' => 'text' ),
-					array( 'name' => 'phone_field', 'label' => 'phone', 'type' => 'field_select' ),
-					array( 'name' => 'phone_custom', 'label' => 'phone custom value', 'type' => 'text' ),
-					array( 'name' => 'address1_field', 'label' => 'address line 1', 'type' => 'field_select' ),
-					array( 'name' => 'address1_custom', 'label' => 'address line 1 custom value', 'type' => 'text' ),
-					array( 'name' => 'address2_field', 'label' => 'address line 2', 'type' => 'field_select' ),
-					array( 'name' => 'address2_custom', 'label' => 'address line 2 custom value', 'type' => 'text' ),
-					array( 'name' => 'city_field', 'label' => 'city', 'type' => 'field_select' ),
-					array( 'name' => 'city_custom', 'label' => 'city custom value', 'type' => 'text' ),
-					array( 'name' => 'state_field', 'label' => 'state', 'type' => 'field_select' ),
-					array( 'name' => 'state_custom', 'label' => 'state custom value', 'type' => 'text' ),
-					array( 'name' => 'zip_field', 'label' => 'zip', 'type' => 'field_select' ),
-					array( 'name' => 'zip_custom', 'label' => 'zip custom value', 'type' => 'text' ),
+					array(
+						'name'        => 'field_mappings',
+						'label'       => 'Field mappings',
+						'type'        => 'generic_map',
+						'limit'       => 10,
+						'key_field'   => array(
+							'title'            => '360Payments field',
+							'allow_custom'     => false,
+							'allow_duplicates' => false,
+							'choices'          => $this->get_payment_field_mapping_choices(),
+						),
+						'value_field' => array(
+							'title'             => 'Form field or custom value',
+							'allow_custom'      => true,
+							'custom_value_type' => 'text',
+							'placeholder'       => 'Select a form field or enter a custom value',
+						),
+					),
 					array( 'name' => 'app_name', 'label' => 'App Name', 'type' => 'text' ),
 					array( 'name' => 'api_token', 'label' => 'API Token', 'type' => 'text' ),
 					array( 'name' => 'api_version', 'label' => 'API Version', 'type' => 'text' ),
@@ -237,44 +230,18 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 
 	private function build_payload( $feed, $entry, $form ) {
 		$meta       = $feed['meta'];
-		$amount     = 'mapped' === rgar( $meta, 'amount_mode' ) ? $this->resolve_feed_value( $meta, $entry, 'mapped_amount_field', 'mapped_amount_custom' ) : rgar( $meta, 'fixed_amount' );
+		$mappings   = $this->get_field_mappings( $feed, $form, $entry );
+		$amount     = 'mapped' === rgar( $meta, 'amount_mode' ) ? rgar( $mappings, 'amount', '' ) : rgar( $meta, 'fixed_amount' );
 		$field_keys = array(
-			'firstName' => array(
-				'field'  => 'first_name_field',
-				'custom' => 'first_name_custom',
-			),
-			'lastName'  => array(
-				'field'  => 'last_name_field',
-				'custom' => 'last_name_custom',
-			),
-			'email'     => array(
-				'field'  => 'email_field',
-				'custom' => 'email_custom',
-			),
-			'phone'     => array(
-				'field'  => 'phone_field',
-				'custom' => 'phone_custom',
-			),
-			'address'   => array(
-				'field'  => 'address1_field',
-				'custom' => 'address1_custom',
-			),
-			'address2'  => array(
-				'field'  => 'address2_field',
-				'custom' => 'address2_custom',
-			),
-			'city'      => array(
-				'field'  => 'city_field',
-				'custom' => 'city_custom',
-			),
-			'state'     => array(
-				'field'  => 'state_field',
-				'custom' => 'state_custom',
-			),
-			'zip'       => array(
-				'field'  => 'zip_field',
-				'custom' => 'zip_custom',
-			),
+			'firstName' => 'firstName',
+			'lastName'  => 'lastName',
+			'email'     => 'email',
+			'phone'     => 'phone',
+			'address'   => 'address',
+			'address2'  => 'address2',
+			'city'      => 'city',
+			'state'     => 'state',
+			'zip'       => 'zip',
 		);
 		$payload    = array(
 			'amount'        => $amount,
@@ -283,20 +250,45 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 			'hideSignature' => ! empty( rgar( $meta, 'hide_signature' ) ),
 		);
 
-		foreach ( $field_keys as $api_key => $field_config ) {
-			$payload[ $api_key ] = $this->resolve_feed_value( $meta, $entry, $field_config['field'], $field_config['custom'] );
+		foreach ( $field_keys as $api_key => $mapping_key ) {
+			$payload[ $api_key ] = rgar( $mappings, $mapping_key, '' );
 		}
 		return $payload;
 	}
 
-	private function resolve_feed_value( $meta, $entry, $field_key, $custom_key ) {
-		$custom_value = rgar( $meta, $custom_key );
-		if ( '' !== trim( (string) $custom_value ) ) {
-			return $custom_value;
+	private function get_field_mappings( $feed, $form, $entry ) {
+		$mappings = $this->get_generic_map_fields( $feed, 'field_mappings', $form, $entry );
+		if ( ! empty( $mappings ) ) {
+			return $mappings;
 		}
 
-		$field_id = rgar( $meta, $field_key );
-		return rgar( $entry, $field_id );
+		return array(
+			'amount'    => rgar( $entry, rgar( $feed['meta'], 'mapped_amount_field' ) ),
+			'firstName' => rgar( $entry, rgar( $feed['meta'], 'first_name_field' ) ),
+			'lastName'  => rgar( $entry, rgar( $feed['meta'], 'last_name_field' ) ),
+			'email'     => rgar( $entry, rgar( $feed['meta'], 'email_field' ) ),
+			'phone'     => rgar( $entry, rgar( $feed['meta'], 'phone_field' ) ),
+			'address'   => rgar( $entry, rgar( $feed['meta'], 'address1_field' ) ),
+			'address2'  => rgar( $entry, rgar( $feed['meta'], 'address2_field' ) ),
+			'city'      => rgar( $entry, rgar( $feed['meta'], 'city_field' ) ),
+			'state'     => rgar( $entry, rgar( $feed['meta'], 'state_field' ) ),
+			'zip'       => rgar( $entry, rgar( $feed['meta'], 'zip_field' ) ),
+		);
+	}
+
+	private function get_payment_field_mapping_choices() {
+		return array(
+			array( 'label' => 'Amount', 'value' => 'amount' ),
+			array( 'label' => 'First name', 'value' => 'firstName' ),
+			array( 'label' => 'Last name', 'value' => 'lastName' ),
+			array( 'label' => 'Email', 'value' => 'email' ),
+			array( 'label' => 'Phone', 'value' => 'phone' ),
+			array( 'label' => 'Address line 1', 'value' => 'address' ),
+			array( 'label' => 'Address line 2', 'value' => 'address2' ),
+			array( 'label' => 'City', 'value' => 'city' ),
+			array( 'label' => 'State', 'value' => 'state' ),
+			array( 'label' => 'Zip', 'value' => 'zip' ),
+		);
 	}
 
 	private function persist_request_result( $entry_id, $feed, $payload, $result ) {
