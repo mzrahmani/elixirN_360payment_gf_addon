@@ -125,7 +125,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 		);
 	}
 
-	protected function feed_list_columns() {
+	public function feed_list_columns() {
 		return array(
 			'feedName' => __( 'Feed Name', 'elixirn-gf-360payment' ),
 			'amount'   => __( 'Amount', 'elixirn-gf-360payment' ),
@@ -133,7 +133,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 	}
 
 	public function get_column_value_amount( $feed ) {
-		$mappings     = $this->get_generic_map_fields( $feed, 'field_mappings' );
+		$mappings     = $this->get_feed_mapping_meta( $feed );
 		$amount_value = rgar( $mappings, 'amount', '' );
 
 		if ( '' === (string) $amount_value ) {
@@ -240,6 +240,44 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 			'state'     => rgar( $entry, rgar( $feed['meta'], 'state_field' ) ),
 			'zip'       => rgar( $entry, rgar( $feed['meta'], 'zip_field' ) ),
 		);
+	}
+
+	private function get_feed_mapping_meta( $feed ) {
+		$mapping_rows = rgar( $feed['meta'], 'field_mappings' );
+		if ( ! is_array( $mapping_rows ) ) {
+			return array();
+		}
+
+		$mappings = array();
+		foreach ( $mapping_rows as $mapping_row ) {
+			if ( ! is_array( $mapping_row ) ) {
+				continue;
+			}
+
+			$key = '';
+			foreach ( array( 'key', 'custom_key', 'field' ) as $candidate ) {
+				if ( isset( $mapping_row[ $candidate ] ) && '' !== (string) $mapping_row[ $candidate ] ) {
+					$key = (string) $mapping_row[ $candidate ];
+					break;
+				}
+			}
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$value = '';
+			foreach ( array( 'value', 'custom_value' ) as $candidate ) {
+				if ( isset( $mapping_row[ $candidate ] ) && '' !== (string) $mapping_row[ $candidate ] ) {
+					$value = (string) $mapping_row[ $candidate ];
+					break;
+				}
+			}
+
+			$mappings[ $key ] = $value;
+		}
+
+		return $mappings;
 	}
 
 	private function get_payment_field_mapping_choices() {
