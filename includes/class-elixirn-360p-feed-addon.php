@@ -34,7 +34,6 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 
 	public function init_admin() {
 		parent::init_admin();
-		add_action( 'admin_footer', array( $this, 'render_feed_settings_script' ) );
 	}
 
 	public function register_webhook_route() {
@@ -48,62 +47,6 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 			)
 		);
 	}
-
-	public function render_feed_settings_script() {
-		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( ! $screen || false === strpos( (string) $screen->id, 'gravityforms' ) ) {
-			return;
-		}
-
-		?>
-		<script>
-			(function($) {
-				if (!$) {
-					return;
-				}
-
-				function getField(fieldName) {
-					return $('#_gaddon_setting_' + fieldName + ', [name="_gaddon_setting_' + fieldName + '"], [name$="[' + fieldName + ']"]').first();
-				}
-
-				function getSettingRow(fieldName) {
-					var field = getField(fieldName);
-					if (!field.length) {
-						return $();
-					}
-
-					return field.closest('tr, li, .gform-settings__field, .gaddon-setting-row, .gforms_form_settings');
-				}
-
-				function toggleAmountFields() {
-					var modeField = getField('amount_mode');
-					if (!modeField.length) {
-						return;
-					}
-
-					var mode = modeField.val();
-					var fixedRow = getSettingRow('fixed_amount');
-
-					if (fixedRow.length) {
-						fixedRow.toggle(mode === 'fixed');
-					}
-				}
-
-				$(document).on('change', '#_gaddon_setting_amount_mode, [name="_gaddon_setting_amount_mode"], [name$="[amount_mode]"]', toggleAmountFields);
-				$(window).on('load', toggleAmountFields);
-				$(toggleAmountFields);
-
-				if (window.MutationObserver) {
-					new MutationObserver(toggleAmountFields).observe(document.body, {
-						childList: true,
-						subtree: true
-					});
-				}
-			})(window.jQuery);
-		</script>
-		<?php
-	}
-
 
 	public function register_entry_meta( $entry_meta, $form_id ) {
 		foreach ( ElixirN_360p_Utils::META_KEYS as $logical => $key ) {
@@ -130,6 +73,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 					array( 'name' => 'debug_enabled', 'label' => 'Enable debug logging', 'type' => 'checkbox', 'choices' => array( array( 'name' => 'debug_enabled', 'label' => 'Enable' ) ) ),
 					array( 'name' => 'logging_verbosity', 'label' => 'Logging verbosity', 'type' => 'select', 'choices' => array( array( 'label' => 'normal', 'value' => 'normal' ), array( 'label' => 'verbose', 'value' => 'verbose' ) ) ),
 					array( 'name' => 'default_terminal_id', 'label' => 'Default Terminal ID', 'type' => 'text' ),
+					array( 'name' => 'default_partner_id', 'label' => 'Default Partner ID', 'type' => 'text' ),
 					array( 'name' => 'default_app_name', 'label' => 'Default App name', 'type' => 'text' ),
 					array( 'name' => 'default_api_token', 'label' => 'Default API Token', 'type' => 'text' ),
 					array( 'name' => 'default_api_version', 'label' => 'Default API Version', 'type' => 'text' ),
@@ -145,8 +89,6 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 				'fields' => array(
 					array( 'name' => 'feedName', 'label' => 'Feed Name', 'type' => 'text', 'required' => true ),
 					array( 'name' => 'isActive', 'label' => 'Feed Active', 'type' => 'toggle' ),
-					array( 'name' => 'amount_mode', 'label' => 'Payment amount mode', 'type' => 'select', 'choices' => array( array( 'label' => 'fixed amount', 'value' => 'fixed' ), array( 'label' => 'mapped field amount', 'value' => 'mapped' ) ) ),
-					array( 'name' => 'fixed_amount', 'label' => 'Fixed amount', 'type' => 'text' ),
 					array(
 						'name'        => 'field_mappings',
 						'label'       => 'Field mappings',
@@ -165,10 +107,10 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 							'placeholder'       => 'Select a form field or enter a custom value',
 						),
 					),
-					array( 'name' => 'app_name', 'label' => 'App Name', 'type' => 'text' ),
-					array( 'name' => 'api_token', 'label' => 'API Token', 'type' => 'text' ),
-					array( 'name' => 'api_version', 'label' => 'API Version', 'type' => 'text' ),
-					array( 'name' => 'terminal_id', 'label' => 'terminal ID', 'type' => 'text' ),
+					array( 'name' => 'app_name', 'label' => 'App Name', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_app_name' ) ),
+					array( 'name' => 'api_token', 'label' => 'API Token', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_api_token' ) ),
+					array( 'name' => 'api_version', 'label' => 'API Version', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_api_version' ) ),
+					array( 'name' => 'terminal_id', 'label' => 'terminal ID', 'type' => 'text', 'default_value' => $this->get_plugin_setting( 'default_terminal_id' ) ),
 					array( 'name' => 'partner_id', 'label' => 'partner ID', 'type' => 'text' ),
 					array( 'name' => 'hide_signature', 'label' => 'hide signature', 'type' => 'checkbox', 'choices' => array( array( 'name' => 'hide_signature', 'label' => 'Hide signature' ) ) ),
 					array( 'name' => 'append_shortcode', 'label' => 'enable automatic shortcode append', 'type' => 'checkbox', 'choices' => array( array( 'name' => 'append_shortcode', 'label' => 'Enable' ) ) ),
@@ -229,9 +171,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 	}
 
 	private function build_payload( $feed, $entry, $form ) {
-		$meta       = $feed['meta'];
 		$mappings   = $this->get_field_mappings( $feed, $form, $entry );
-		$amount     = 'mapped' === rgar( $meta, 'amount_mode' ) ? rgar( $mappings, 'amount', '' ) : rgar( $meta, 'fixed_amount' );
 		$field_keys = array(
 			'firstName' => 'firstName',
 			'lastName'  => 'lastName',
@@ -244,10 +184,10 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 			'zip'       => 'zip',
 		);
 		$payload    = array(
-			'amount'        => $amount,
-			'terminalId'    => rgar( $meta, 'terminal_id', $this->get_plugin_setting( 'default_terminal_id' ) ),
-			'partnerId'     => rgar( $meta, 'partner_id' ),
-			'hideSignature' => ! empty( rgar( $meta, 'hide_signature' ) ),
+			'amount'        => rgar( $mappings, 'amount', '' ),
+			'terminalId'    => rgar( $feed['meta'], 'terminal_id', $this->get_plugin_setting( 'default_terminal_id' ) ),
+			'partnerId'     => rgar( $feed['meta'], 'partner_id', $this->get_plugin_setting( 'default_partner_id' ) ),
+			'hideSignature' => ! empty( rgar( $feed['meta'], 'hide_signature' ) ),
 		);
 
 		foreach ( $field_keys as $api_key => $mapping_key ) {
