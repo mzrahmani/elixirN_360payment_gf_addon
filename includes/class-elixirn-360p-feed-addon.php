@@ -153,15 +153,25 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 					array( 'name' => 'amount_mode', 'label' => 'Payment amount mode', 'type' => 'select', 'choices' => array( array( 'label' => 'fixed amount', 'value' => 'fixed' ), array( 'label' => 'mapped field amount', 'value' => 'mapped' ) ) ),
 					array( 'name' => 'fixed_amount', 'label' => 'Fixed amount', 'type' => 'text' ),
 					array( 'name' => 'mapped_amount_field', 'label' => 'Mapped amount field', 'type' => 'field_select' ),
+					array( 'name' => 'mapped_amount_custom', 'label' => 'Mapped amount custom value', 'type' => 'text' ),
 					array( 'name' => 'first_name_field', 'label' => 'first name', 'type' => 'field_select' ),
+					array( 'name' => 'first_name_custom', 'label' => 'first name custom value', 'type' => 'text' ),
 					array( 'name' => 'last_name_field', 'label' => 'last name', 'type' => 'field_select' ),
+					array( 'name' => 'last_name_custom', 'label' => 'last name custom value', 'type' => 'text' ),
 					array( 'name' => 'email_field', 'label' => 'email', 'type' => 'field_select' ),
+					array( 'name' => 'email_custom', 'label' => 'email custom value', 'type' => 'text' ),
 					array( 'name' => 'phone_field', 'label' => 'phone', 'type' => 'field_select' ),
+					array( 'name' => 'phone_custom', 'label' => 'phone custom value', 'type' => 'text' ),
 					array( 'name' => 'address1_field', 'label' => 'address line 1', 'type' => 'field_select' ),
+					array( 'name' => 'address1_custom', 'label' => 'address line 1 custom value', 'type' => 'text' ),
 					array( 'name' => 'address2_field', 'label' => 'address line 2', 'type' => 'field_select' ),
+					array( 'name' => 'address2_custom', 'label' => 'address line 2 custom value', 'type' => 'text' ),
 					array( 'name' => 'city_field', 'label' => 'city', 'type' => 'field_select' ),
+					array( 'name' => 'city_custom', 'label' => 'city custom value', 'type' => 'text' ),
 					array( 'name' => 'state_field', 'label' => 'state', 'type' => 'field_select' ),
+					array( 'name' => 'state_custom', 'label' => 'state custom value', 'type' => 'text' ),
 					array( 'name' => 'zip_field', 'label' => 'zip', 'type' => 'field_select' ),
+					array( 'name' => 'zip_custom', 'label' => 'zip custom value', 'type' => 'text' ),
 					array( 'name' => 'app_name', 'label' => 'App Name', 'type' => 'text' ),
 					array( 'name' => 'api_token', 'label' => 'API Token', 'type' => 'text' ),
 					array( 'name' => 'api_version', 'label' => 'API Version', 'type' => 'text' ),
@@ -227,17 +237,44 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 
 	private function build_payload( $feed, $entry, $form ) {
 		$meta       = $feed['meta'];
-		$amount     = 'mapped' === rgar( $meta, 'amount_mode' ) ? rgar( $entry, rgar( $meta, 'mapped_amount_field' ) ) : rgar( $meta, 'fixed_amount' );
+		$amount     = 'mapped' === rgar( $meta, 'amount_mode' ) ? $this->resolve_feed_value( $meta, $entry, 'mapped_amount_field', 'mapped_amount_custom' ) : rgar( $meta, 'fixed_amount' );
 		$field_keys = array(
-			'firstName' => 'first_name_field',
-			'lastName'  => 'last_name_field',
-			'email'     => 'email_field',
-			'phone'     => 'phone_field',
-			'address'   => 'address1_field',
-			'address2'  => 'address2_field',
-			'city'      => 'city_field',
-			'state'     => 'state_field',
-			'zip'       => 'zip_field',
+			'firstName' => array(
+				'field'  => 'first_name_field',
+				'custom' => 'first_name_custom',
+			),
+			'lastName'  => array(
+				'field'  => 'last_name_field',
+				'custom' => 'last_name_custom',
+			),
+			'email'     => array(
+				'field'  => 'email_field',
+				'custom' => 'email_custom',
+			),
+			'phone'     => array(
+				'field'  => 'phone_field',
+				'custom' => 'phone_custom',
+			),
+			'address'   => array(
+				'field'  => 'address1_field',
+				'custom' => 'address1_custom',
+			),
+			'address2'  => array(
+				'field'  => 'address2_field',
+				'custom' => 'address2_custom',
+			),
+			'city'      => array(
+				'field'  => 'city_field',
+				'custom' => 'city_custom',
+			),
+			'state'     => array(
+				'field'  => 'state_field',
+				'custom' => 'state_custom',
+			),
+			'zip'       => array(
+				'field'  => 'zip_field',
+				'custom' => 'zip_custom',
+			),
 		);
 		$payload    = array(
 			'amount'        => $amount,
@@ -246,10 +283,20 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 			'hideSignature' => ! empty( rgar( $meta, 'hide_signature' ) ),
 		);
 
-		foreach ( $field_keys as $api_key => $feed_key ) {
-			$payload[ $api_key ] = rgar( $entry, rgar( $meta, $feed_key ) );
+		foreach ( $field_keys as $api_key => $field_config ) {
+			$payload[ $api_key ] = $this->resolve_feed_value( $meta, $entry, $field_config['field'], $field_config['custom'] );
 		}
 		return $payload;
+	}
+
+	private function resolve_feed_value( $meta, $entry, $field_key, $custom_key ) {
+		$custom_value = rgar( $meta, $custom_key );
+		if ( '' !== trim( (string) $custom_value ) ) {
+			return $custom_value;
+		}
+
+		$field_id = rgar( $meta, $field_key );
+		return rgar( $entry, $field_id );
 	}
 
 	private function persist_request_result( $entry_id, $feed, $payload, $result ) {
