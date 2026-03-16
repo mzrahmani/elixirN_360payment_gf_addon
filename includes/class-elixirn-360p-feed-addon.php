@@ -125,6 +125,32 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 		);
 	}
 
+	protected function feed_list_columns() {
+		return array(
+			'feedName' => __( 'Feed Name', 'elixirn-gf-360payment' ),
+			'amount'   => __( 'Amount', 'elixirn-gf-360payment' ),
+		);
+	}
+
+	public function get_column_value_amount( $feed ) {
+		$mappings     = $this->get_generic_map_fields( $feed, 'field_mappings' );
+		$amount_value = rgar( $mappings, 'amount', '' );
+
+		if ( '' === (string) $amount_value ) {
+			return '&mdash;';
+		}
+
+		$form = GFAPI::get_form( rgar( $feed, 'form_id' ) );
+		if ( ! empty( $form ) && is_array( $form ) ) {
+			$field = GFFormsModel::get_field( $form, $amount_value );
+			if ( $field ) {
+				return esc_html( $field->get_field_label( false, false ) );
+			}
+		}
+
+		return esc_html( (string) $amount_value );
+	}
+
 	public function process_feed( $feed, $entry, $form ) {
 		if ( empty( rgar( $feed['meta'], 'isActive' ) ) ) {
 			ElixirN_360p_Logger::log( 'info', 'feed execution skip', array( 'reason' => 'inactive', 'entry_id' => $entry['id'], 'feed_id' => $feed['id'] ) );
