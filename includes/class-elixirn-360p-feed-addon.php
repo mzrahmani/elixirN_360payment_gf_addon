@@ -34,7 +34,7 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 
 	public function init_admin() {
 		parent::init_admin();
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_feed_settings_script' ) );
+		add_action( 'admin_footer', array( $this, 'render_feed_settings_script' ) );
 	}
 
 	public function register_webhook_route() {
@@ -49,44 +49,64 @@ class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 		);
 	}
 
-	public function enqueue_feed_settings_script() {
+	public function render_feed_settings_script() {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen || false === strpos( (string) $screen->id, 'gravityforms' ) ) {
 			return;
 		}
 
-		wp_add_inline_script(
-			'jquery',
-			"(function($){
+		?>
+		<script>
+			(function($) {
+				if (!$) {
+					return;
+				}
+
+				function getField(fieldName) {
+					return $('#_gaddon_setting_' + fieldName + ', [name="_gaddon_setting_' + fieldName + '"], [name$="[' + fieldName + ']"]').first();
+				}
+
 				function getSettingRow(fieldName) {
-					var row = $('#gaddon-setting-row-' + fieldName);
-					if (row.length) {
-						return row;
-					}
-
-					var field = $('#_gaddon_setting_' + fieldName + ', [name=\"_gaddon_setting_' + fieldName + '\"]');
+					var field = getField(fieldName);
 					if (!field.length) {
-						field = $('[name$=\"[' + fieldName + ']\"]');
+						return $();
 					}
 
-					return field.closest('tr, li, .gform-settings__field, .gaddon-setting-row');
+					return field.closest('tr, li, .gform-settings__field, .gaddon-setting-row, .gforms_form_settings');
 				}
 
 				function toggleAmountFields() {
-					var modeField = $('#_gaddon_setting_amount_mode, [name=\"_gaddon_setting_amount_mode\"], [name$=\"[amount_mode]\"]').first();
+					var modeField = getField('amount_mode');
 					if (!modeField.length) {
 						return;
 					}
 
 					var mode = modeField.val();
-					getSettingRow('fixed_amount').toggle(mode === 'fixed');
-					getSettingRow('mapped_amount_field').toggle(mode === 'mapped');
+					var fixedRow = getSettingRow('fixed_amount');
+					var mappedRow = getSettingRow('mapped_amount_field');
+
+					if (fixedRow.length) {
+						fixedRow.toggle(mode === 'fixed');
+					}
+
+					if (mappedRow.length) {
+						mappedRow.toggle(mode === 'mapped');
+					}
 				}
 
-				$(document).on('change', '#_gaddon_setting_amount_mode, [name=\"_gaddon_setting_amount_mode\"], [name$=\"[amount_mode]\"]', toggleAmountFields);
+				$(document).on('change', '#_gaddon_setting_amount_mode, [name="_gaddon_setting_amount_mode"], [name$="[amount_mode]"]', toggleAmountFields);
+				$(window).on('load', toggleAmountFields);
 				$(toggleAmountFields);
-			})(jQuery);"
-		);
+
+				if (window.MutationObserver) {
+					new MutationObserver(toggleAmountFields).observe(document.body, {
+						childList: true,
+						subtree: true
+					});
+				}
+			})(window.jQuery);
+		</script>
+		<?php
 	}
 
 
