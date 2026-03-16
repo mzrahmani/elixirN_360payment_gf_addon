@@ -46,9 +46,26 @@ class ElixirN_360p_Admin {
 
 		echo '<ul>';
 		foreach ( ElixirN_360p_Utils::META_KEYS as $k => $key ) {
-			printf( '<li><strong>%s:</strong> %s</li>', esc_html( $k ), esc_html( (string) gform_get_meta( $entry['id'], $key ) ) );
+			$value = gform_get_meta( $entry['id'], $key );
+			echo '<li><strong>' . esc_html( $k ) . ':</strong> ' . $this->format_meta_value( $k, $value ) . '</li>';
 		}
 		echo '</ul>';
+	}
+
+	private function format_meta_value( $logical_key, $value ) {
+		if ( 'request_payload' === $logical_key ) {
+			$decoded = json_decode( (string) $value, true );
+			if ( JSON_ERROR_NONE === json_last_error() ) {
+				$value = wp_json_encode( $decoded, JSON_PRETTY_PRINT );
+			}
+
+			return sprintf(
+				'<pre style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%%;margin:6px 0 0;">%s</pre>',
+				esc_html( (string) $value )
+			);
+		}
+
+		return esc_html( (string) $value );
 	}
 
 	public function add_entries_column( $columns ) {
