@@ -4,7 +4,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! class_exists( 'GFForms' ) || ! method_exists( 'GFForms', 'include_feed_addon_framework' ) ) {
+	return;
+}
+
 GFForms::include_feed_addon_framework();
+
+if ( ! class_exists( 'GFFeedAddOn' ) ) {
+	return;
+}
 
 class ElixirN_360p_Feed_AddOn extends GFFeedAddOn {
 	protected $_version = ELIXIRN_360P_VERSION;
